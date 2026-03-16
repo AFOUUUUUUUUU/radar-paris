@@ -6,8 +6,8 @@ const app      = express();
 const PORT     = 3001;
 const ODDS_KEY  = "747faf2c476eb3d8b30498b2e31f0c68";
 const ODDS_BASE = "https://api.the-odds-api.com/v4";
-const AF_KEY    = "bc8b07ff6898fb018300df3a87a2570b";
-const AF_BASE   = "https://v3.football.api-sports.io";
+const FD_KEY    = "8a1de6eb00154a76b7718739c8eaafac";
+const FD_BASE   = "https://api.football-data.org/v4";
 
 app.use(cors());
 app.use(express.json());
@@ -32,19 +32,19 @@ app.use("/api", async (req, res) => {
   }
 });
 
-// Route API-Football
-app.use("/af", async (req, res) => {
+// Route Football-Data.org
+app.use("/fd", async (req, res) => {
   const query = new URLSearchParams(req.query).toString();
-  const url   = `${AF_BASE}${req.path}?${query}`;
-  console.log(`[API-Football] GET ${url}`);
+  const url   = `${FD_BASE}${req.path}${query ? '?' + query : ''}`;
+  console.log(`[FootballData] GET ${url}`);
   try {
     const response = await fetch(url, {
-      headers: { "x-apisports-key": AF_KEY }
+      headers: { "X-Auth-Token": FD_KEY }
     });
     const data = await response.json();
     res.json(data);
   } catch (err) {
-    console.error("[API-Football] Erreur :", err.message);
+    console.error("[FootballData] Erreur :", err.message);
     res.status(500).json({ error: err.message });
   }
 });
