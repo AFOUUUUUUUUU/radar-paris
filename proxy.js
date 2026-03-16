@@ -6,7 +6,7 @@ const app      = express();
 const PORT     = 3001;
 const ODDS_KEY  = "747faf2c476eb3d8b30498b2e31f0c68";
 const ODDS_BASE = "https://api.the-odds-api.com/v4";
-const AF_KEY    = "e7f5ce667a21f5bf35db176194616dda";
+const AF_KEY    = "bc8b07ff6898fb018300df3a87a2570b";
 const AF_BASE   = "https://v3.football.api-sports.io";
 
 app.use(cors());
