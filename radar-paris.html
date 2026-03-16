@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Radar Paris</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f9f9f7; color: #1a1a1a; min-height: 100vh; }
+.container { max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem; }
+.top-bar { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 8px; }
+.app-title { font-size: 22px; font-weight: 600; letter-spacing: -0.03em; }
+.subtitle { font-size: 12px; color: #888; margin-top: 3px; }
+.proxy-status { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #888; margin-top: 4px; }
+.proxy-dot { width: 7px; height: 7px; border-radius: 50%; background: #ccc; }
+.proxy-dot.ok { background: #1D9E75; }
+.proxy-dot.err { background: #E24B4A; }
+.top-right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+.quota-box { font-size: 11px; padding: 4px 10px; border-radius: 8px; border: 1px solid #e0e0e0; color: #555; background: #f2f2f0; }
+.quota-ok   { border-color: #5DCAA5; color: #0F6E56; background: #E1F5EE; }
+.quota-warn { border-color: #FAC775; color: #633806; background: #FAEEDA; }
+.quota-low  { border-color: #F0997B; color: #712B13; background: #FAECE7; }
+.refresh-btn { font-size: 12px; padding: 6px 14px; border: 1px solid #ddd; border-radius: 8px; background: white; color: #555; cursor: pointer; }
+.refresh-btn:hover { background: #f2f2f0; }
+.kpi-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 1.5rem; }
+.kpi { background: #f2f2f0; border-radius: 8px; padding: 10px 12px; }
+.kpi-n { font-size: 22px; font-weight: 600; }
+.kpi-l { font-size: 10px; color: #888; margin-top: 2px; }
+.tab-row { display: flex; gap: 0; margin-bottom: 1.5rem; border-bottom: 1px solid #e8e8e8; }
+.tab-btn { font-size: 13px; padding: 8px 18px; border: none; background: transparent; color: #888; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.tab-btn.on { color: #1a1a1a; font-weight: 500; border-bottom-color: #1a1a1a; }
+.live-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #E24B4A; margin-right: 5px; animation: pulse 1.2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+.leagues { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 1rem; }
+.league-pill { font-size: 12px; padding: 4px 12px; border-radius: 20px; border: 1px solid #e0e0e0; background: white; color: #888; cursor: pointer; }
+.league-pill.on { border-color: #1a1a1a; color: #1a1a1a; background: #f2f2f0; font-weight: 500; }
+.sort-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 1.5rem; align-items: center; }
+.sort-label { font-size: 12px; color: #888; margin-right: 4px; }
+.sort-btn { font-size: 12px; padding: 4px 12px; border-radius: 20px; border: 1px solid #e0e0e0; background: white; color: #888; cursor: pointer; }
+.sort-btn.on { background: #f2f2f0; color: #1a1a1a; border-color: #1a1a1a; font-weight: 500; }
+.card { border: 1px solid #e8e8e8; border-radius: 12px; padding: 14px 16px; background: white; margin-bottom: 8px; }
+.card.is-live { border-left: 3px solid #E24B4A; }
+.card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.league-tag { font-size: 11px; color: #aaa; text-transform: uppercase; letter-spacing: 0.07em; }
+.time-tag { font-size: 11px; color: #aaa; display: flex; align-items: center; gap: 4px; }
+.badge-live { font-size: 10px; font-weight: 600; background: #FCEBEB; color: #A32D2D; border-radius: 4px; padding: 2px 7px; }
+.badge-today { font-size: 10px; font-weight: 600; background: #EEEDFE; color: #3C3489; border-radius: 4px; padding: 2px 7px; }
+.teams-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.team-block { flex: 1; }
+.team-name { font-size: 14px; font-weight: 600; }
+.team-stat { font-size: 11px; color: #aaa; margin-top: 3px; }
+.sep { font-size: 11px; color: #ccc; }
+.cotes-row { display: flex; gap: 8px; margin-bottom: 12px; }
+.cote-box { flex: 1; text-align: center; padding: 8px 4px; background: #f9f9f7; border-radius: 8px; border: 1px solid #eee; }
+.cote-label { font-size: 10px; color: #aaa; margin-bottom: 3px; }
+.cote-val { font-size: 15px; font-weight: 600; color: #1a1a1a; }
+.bets-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.bet { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; }
+.bet-ht05 { background: #E1F5EE; color: #0F6E56; }
+.bet-ht15 { background: #9FE1CB; color: #085041; }
+.bet-btts { background: #EEEDFE; color: #3C3489; }
+.bet-o25  { background: #FAEEDA; color: #633806; }
+.bet-o35  { background: #FAECE7; color: #712B13; }
+.scores-block { display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px; }
+.score-line { display: flex; align-items: center; gap: 8px; }
+.score-name { font-size: 11px; color: #aaa; width: 130px; flex-shrink: 0; }
+.bar-track { flex: 1; height: 4px; background: #f0f0f0; border-radius: 2px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 2px; }
+.bar-teal-l { background: #5DCAA5; }
+.bar-teal-d { background: #0F6E56; }
+.bar-purple { background: #534AB7; }
+.bar-amber  { background: #BA7517; }
+.bar-coral  { background: #D85A30; }
+.score-pct { font-size: 11px; font-weight: 600; width: 32px; text-align: right; }
+.pct-teal-l { color: #1D9E75; }
+.pct-teal-d { color: #085041; }
+.pct-purple { color: #534AB7; }
+.pct-amber  { color: #BA7517; }
+.pct-coral  { color: #D85A30; }
+.card-foot { display: flex; justify-content: space-between; align-items: flex-start; padding-top: 8px; border-top: 1px solid #f0f0f0; gap: 10px; }
+.insight { font-size: 11px; color: #aaa; line-height: 1.5; flex: 1; }
+.ai-btn { font-size: 11px; padding: 5px 12px; border: 1px solid #ddd; border-radius: 8px; background: white; color: #555; cursor: pointer; white-space: nowrap; }
+.ai-btn:hover { background: #f2f2f0; }
+.ai-btn.loading { opacity: 0.5; pointer-events: none; }
+.ai-result { margin-top: 8px; padding: 10px 12px; background: #f9f9f7; border-radius: 8px; font-size: 12px; color: #555; line-height: 1.7; border: 1px solid #eee; }
+.best-tag { display: inline-block; font-size: 10px; font-weight: 600; background: #E1F5EE; color: #0F6E56; border-radius: 4px; padding: 1px 7px; margin-left: 8px; vertical-align: middle; }
+.section-title { font-size: 11px; font-weight: 600; color: #aaa; text-transform: uppercase; letter-spacing: 0.08em; margin: 1.2rem 0 8px; }
+.empty { text-align: center; padding: 3rem; font-size: 13px; color: #aaa; line-height: 1.8; }
+.error-box { padding: 14px 16px; border: 1px solid #eee; border-radius: 12px; font-size: 13px; color: #555; line-height: 1.8; background: white; }
+.thinking { color: #aaa; font-style: italic; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="top-bar">
+    <div>
+      <div class="app-title">Radar Paris ⚽</div>
+      <div class="subtitle" id="updated">Chargement…</div>
+      <div class="proxy-status"><span class="proxy-dot" id="proxy-dot"></span><span id="proxy-label">localhost:3001</span></div>
+    </div>
+    <div class="top-right">
+      <span class="quota-box" id="quota-badge">Quota : —</span>
+      <button class="refresh-btn" onclick="loadAll()">↻ Actualiser</button>
+    </div>
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi"><div class="kpi-n" id="kpi-total">—</div><div class="kpi-l">Matchs trouvés</div></div>
+    <div class="kpi"><div class="kpi-n" style="color:#E24B4A;" id="kpi-live">—</div><div class="kpi-l">En direct</div></div>
+    <div class="kpi"><div class="kpi-n" style="color:#1D9E75;" id="kpi-top">—</div><div class="kpi-l">Confiance ≥ 80%</div></div>
+    <div class="kpi"><div class="kpi-n" style="color:#0F6E56;" id="kpi-ht05">—</div><div class="kpi-l">+0.5 MT fort</div></div>
+    <div class="kpi"><div class="kpi-n" style="color:#3C3489;" id="kpi-btts">—</div><div class="kpi-l">BTTS fort</div></div>
+  </div>
+
+  <div class="tab-row">
+    <button class="tab-btn on" onclick="setTab('all',this)">Tous</button>
+    <button class="tab-btn" onclick="setTab('live',this)"><span class="live-dot"></span>En direct</button>
+    <button class="tab-btn" onclick="setTab('today',this)">Aujourd'hui</button>
+    <button class="tab-btn" onclick="setTab('upcoming',this)">À venir</button>
+  </div>
+
+  <div class="leagues" id="leagues"></div>
+  <div class="sort-row">
+    <span class="sort-label">Trier :</span>
+    <button class="sort-btn on" onclick="setSort('global',this)">Score global</button>
+    <button class="sort-btn" onclick="setSort('ht05',this)">+0.5 MT</button>
+    <button class="sort-btn" onclick="setSort('ht15',this)">+1.5 MT</button>
+    <button class="sort-btn" onclick="setSort('btts',this)">BTTS</button>
+    <button class="sort-btn" onclick="setSort('o25',this)">+2.5 buts</button>
+  </div>
+  <div id="list"><div class="empty thinking">Récupération des matchs en cours…</div></div>
+</div>
+
+<script>
+const PROXY = "http://localhost:3001/api";
+const LEAGUES = {
+  "soccer_france_ligue_one":           "Ligue 1",
+  "soccer_france_ligue_two":           "Ligue 2",
+  "soccer_epl":                        "Premier League",
+  "soccer_spain_la_liga":              "LaLiga",
+  "soccer_italy_serie_a":              "Serie A",
+  "soccer_germany_bundesliga":         "Bundesliga",
+  "soccer_argentina_primera_division": "Argentine Liga",
+};
+const SPORT_KEYS = Object.keys(LEAGUES);
+
+let allMatches = [], activLeague = "Toutes", sortKey = "global", activeTab = "all";
+
+async function apiFetch(path) {
+  const r = await fetch(`${PROXY}${path}`);
+  updateQuota(r.headers.get("x-requests-remaining"));
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  return r.json();
+}
+
+function setProxyStatus(ok) {
+  document.getElementById("proxy-dot").className = "proxy-dot " + (ok?"ok":"err");
+  document.getElementById("proxy-label").textContent = ok ? "Proxy connecté · The Odds API" : "Proxy injoignable — relance node proxy.js";
+}
+
+function updateQuota(remaining) {
+  if (!remaining) return;
+  const rem = parseInt(remaining);
+  const badge = document.getElementById("quota-badge");
+  badge.textContent = `Quota : ${rem} restantes`;
+  badge.className = "quota-box" + (rem >= 200 ? " quota-ok" : rem >= 50 ? " quota-warn" : " quota-low");
+}
+
+function isLive(commence_time) {
+  const now = Date.now();
+  const start = new Date(commence_time).getTime();
+  return start <= now && now <= start + 2 * 60 * 60 * 1000;
+}
+
+function isToday(commence_time) {
+  const d = new Date(commence_time);
+  const now = new Date();
+  return d.getDate()===now.getDate() && d.getMonth()===now.getMonth() && d.getFullYear()===now.getFullYear();
+}
+
+function getStatus(m) {
+  if (isLive(m.date)) return "live";
+  if (isToday(m.date)) return "today";
+  return "upcoming";
+}
+
+function scoresFromOdds(homeOdds, drawOdds, awayOdds, ouOdds) {
+  const total = (1/homeOdds + 1/drawOdds + 1/awayOdds);
+  const pH = (1/homeOdds) / total;
+  const pA = (1/awayOdds) / total;
+  const expGoals = 1.5 + (1 - Math.abs(pH - pA)) * 1.2;
+  let o25 = ouOdds ? Math.round((1/ouOdds.over)/((1/ouOdds.over)+(1/ouOdds.under))*100) : Math.min(92,Math.round(30+expGoals*18));
+  return {
+    ht05: Math.min(95, Math.round(42 + expGoals*14)),
+    ht15: Math.min(88, Math.round(12 + expGoals*13)),
+    btts: Math.min(90, Math.round(25 + expGoals*14 + (pH*pA)*40)),
+    o25,
+    o35:  Math.min(85, Math.round(o25*0.68)),
+    expGoals: expGoals.toFixed(1)
+  };
+}
+
+function globalScore(m) { return Math.round(m.ht05*0.25+m.ht15*0.2+m.btts*0.25+m.o25*0.2+m.o35*0.1); }
+function sortVal(m) {
+  if(sortKey==="ht05") return m.ht05;
+  if(sortKey==="ht15") return m.ht15;
+  if(sortKey==="btts") return m.btts;
+  if(sortKey==="o25")  return m.o25;
+  return globalScore(m);
+}
+function setSort(k,btn) { sortKey=k; document.querySelectorAll(".sort-btn").forEach(b=>b.classList.remove("on")); btn.classList.add("on"); render(); }
+function setLeague(l) { activLeague=l; document.querySelectorAll(".league-pill").forEach(p=>p.classList.toggle("on",p.dataset.l===l)); render(); }
+function setTab(t,btn) { activeTab=t; document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("on")); btn.classList.add("on"); render(); }
+
+function fmtDateTime(ds) {
+  const d = new Date(ds);
+  const today = new Date();
+  const isT = d.getDate()===today.getDate()&&d.getMonth()===today.getMonth();
+  const time = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  if (isT) return time;
+  return `${d.getDate()}/${d.getMonth()+1} ${time}`;
+}
+
+function render() {
+  let list = allMatches.filter(m => {
+    if (activLeague !== "Toutes" && m.leagueName !== activLeague) return false;
+    if (activeTab === "live")     return getStatus(m) === "live";
+    if (activeTab === "today")    return getStatus(m) === "today" || getStatus(m) === "live";
+    if (activeTab === "upcoming") return getStatus(m) === "upcoming";
+    return true;
+  });
+  list = [...list].sort((a,b) => {
+    // Live en premier, puis tri par score
+    const sa = getStatus(a)==="live"?1:0, sb = getStatus(b)==="live"?1:0;
+    if(sa!==sb) return sb-sa;
+    return sortVal(b)-sortVal(a);
+  });
+
+  const order = ["Toutes","Ligue 1","Ligue 2","Premier League","LaLiga","Serie A","Bundesliga","Argentine Liga"];
+  const present = new Set(allMatches.map(m=>m.leagueName));
+  document.getElementById("leagues").innerHTML = order.filter(l=>l==="Toutes"||present.has(l)).map(l=>
+    `<button class="league-pill${l===activLeague?" on":""}" data-l="${l}" onclick="setLeague('${l}')">${l}</button>`
+  ).join("");
+
+  document.getElementById("kpi-total").textContent = allMatches.length;
+  document.getElementById("kpi-live").textContent  = allMatches.filter(m=>getStatus(m)==="live").length;
+  document.getElementById("kpi-top").textContent   = allMatches.filter(m=>globalScore(m)>=80).length;
+  document.getElementById("kpi-ht05").textContent  = allMatches.filter(m=>m.ht05>=80).length;
+  document.getElementById("kpi-btts").textContent  = allMatches.filter(m=>m.btts>=75).length;
+
+  if(!list.length) {
+    document.getElementById("list").innerHTML=`<div class="empty">Aucun match dans cette sélection.</div>`;
+    return;
+  }
+
+  document.getElementById("list").innerHTML = list.map((m,i) => {
+    const gs = globalScore(m);
+    const status = getStatus(m);
+    const bets = [];
+    if(m.ht05>=60) bets.push(`<span class="bet bet-ht05">+0.5 MT ${m.ht05}%</span>`);
+    if(m.ht15>=50) bets.push(`<span class="bet bet-ht15">+1.5 MT ${m.ht15}%</span>`);
+    if(m.btts>=60) bets.push(`<span class="bet bet-btts">BTTS ${m.btts}%</span>`);
+    if(m.o25>=60)  bets.push(`<span class="bet bet-o25">+2.5 buts ${m.o25}%</span>`);
+    if(m.o35>=50)  bets.push(`<span class="bet bet-o35">+3.5 buts ${m.o35}%</span>`);
+
+    const statusBadge = status==="live"
+      ? `<span class="badge-live"><span class="live-dot"></span>En direct</span>`
+      : status==="today" ? `<span class="badge-today">Aujourd'hui</span>` : "";
+
+    const cotesHtml = (m.homeOdds&&m.drawOdds&&m.awayOdds) ? `
+    <div class="cotes-row">
+      <div class="cote-box"><div class="cote-label">${m.home.split(' ').slice(0,2).join(' ')}</div><div class="cote-val">${m.homeOdds}</div></div>
+      <div class="cote-box"><div class="cote-label">Nul</div><div class="cote-val">${m.drawOdds}</div></div>
+      <div class="cote-box"><div class="cote-label">${m.away.split(' ').slice(0,2).join(' ')}</div><div class="cote-val">${m.awayOdds}</div></div>
+      ${m.ouOdds?`<div class="cote-box"><div class="cote-label">+2.5 buts</div><div class="cote-val">${m.ouOdds.over}</div></div>`:''}
+    </div>` : '';
+
+    return `<div class="card${status==="live"?" is-live":""}" id="card-${m.id}">
+      <div class="card-head">
+        <span class="league-tag">${m.leagueName}</span>
+        <span class="time-tag">${fmtDateTime(m.date)} ${statusBadge}</span>
+      </div>
+      <div class="teams-row">
+        <div class="team-block">
+          <div class="team-name">${m.home}${i===0?'<span class="best-tag">Top</span>':''}</div>
+          <div class="team-stat">~${m.expGoals} buts attendus</div>
+        </div>
+        <span class="sep">vs</span>
+        <div class="team-block" style="text-align:right;">
+          <div class="team-name">${m.away}</div>
+          <div class="team-stat">Score global : ${gs}%</div>
+        </div>
+      </div>
+      ${cotesHtml}
+      <div class="bets-row">${bets.join("")}</div>
+      <div class="scores-block">
+        <div class="score-line"><span class="score-name">+0.5 buts mi-temps</span><div class="bar-track"><div class="bar-fill bar-teal-l" style="width:${m.ht05}%"></div></div><span class="score-pct pct-teal-l">${m.ht05}%</span></div>
+        <div class="score-line"><span class="score-name">+1.5 buts mi-temps</span><div class="bar-track"><div class="bar-fill bar-teal-d" style="width:${m.ht15}%"></div></div><span class="score-pct pct-teal-d">${m.ht15}%</span></div>
+        <div class="score-line"><span class="score-name">BTTS</span><div class="bar-track"><div class="bar-fill bar-purple" style="width:${m.btts}%"></div></div><span class="score-pct pct-purple">${m.btts}%</span></div>
+        <div class="score-line"><span class="score-name">+2.5 buts match</span><div class="bar-track"><div class="bar-fill bar-amber" style="width:${m.o25}%"></div></div><span class="score-pct pct-amber">${m.o25}%</span></div>
+        <div class="score-line"><span class="score-name">+3.5 buts match</span><div class="bar-track"><div class="bar-fill bar-coral" style="width:${m.o35}%"></div></div><span class="score-pct pct-coral">${m.o35}%</span></div>
+      </div>
+      <div class="card-foot">
+        <span class="insight">Calculé depuis les cotes · ${m.bookmaker||'Bookmaker moyen'}</span>
+        <button class="ai-btn" id="btn-${m.id}" onclick="analyzeMatch('${m.id}')">Analyser ↗</button>
+      </div>
+      <div id="ai-${m.id}"></div>
+    </div>`;
+  }).join("");
+}
+
+async function loadAll() {
+  document.getElementById("list").innerHTML=`<div class="empty thinking">Récupération des matchs en cours…</div>`;
+  allMatches = [];
+  document.getElementById("updated").textContent = `Chargement · 7 ligues`;
+
+  try {
+    const results = await Promise.all(SPORT_KEYS.map(async sport => {
+      try {
+        // Matchs à venir + en cours (pas de filtre date = tout ce qui a des cotes)
+        const data = await apiFetch(`/sports/${sport}/odds?regions=eu&markets=h2h,totals&oddsFormat=decimal`);
+        setProxyStatus(true);
+        if (!Array.isArray(data)) return [];
+
+        return data.map(event => {
+          let homeOdds=null,drawOdds=null,awayOdds=null,ouOdds=null,bookmaker=null;
+          for (const bm of (event.bookmakers||[])) {
+            for (const market of (bm.markets||[])) {
+              if (market.key==="h2h" && !homeOdds) {
+                bookmaker = bm.title;
+                const h = (market.outcomes||[]).find(o=>o.name===event.home_team);
+                const a = (market.outcomes||[]).find(o=>o.name===event.away_team);
+                const d = (market.outcomes||[]).find(o=>o.name==="Draw");
+                if(h&&a&&d){ homeOdds=h.price.toFixed(2); drawOdds=d.price.toFixed(2); awayOdds=a.price.toFixed(2); }
+              }
+              if (market.key==="totals" && !ouOdds) {
+                const ov=(market.outcomes||[]).find(o=>o.name==="Over"&&o.point===2.5);
+                const un=(market.outcomes||[]).find(o=>o.name==="Under"&&o.point===2.5);
+                if(ov&&un) ouOdds={over:ov.price.toFixed(2),under:un.price.toFixed(2)};
+              }
+            }
+            if(homeOdds&&ouOdds) break;
+          }
+          const scores = scoresFromOdds(
+            parseFloat(homeOdds)||2.0, parseFloat(drawOdds)||3.2,
+            parseFloat(awayOdds)||3.5,
+            ouOdds?{over:parseFloat(ouOdds.over),under:parseFloat(ouOdds.under)}:null
+          );
+          return { id:event.id, home:event.home_team, away:event.away_team, leagueName:LEAGUES[sport], date:event.commence_time, homeOdds,drawOdds,awayOdds,ouOdds,bookmaker,...scores };
+        });
+      } catch(e){ return []; }
+    }));
+
+    allMatches = results.flat();
+    const now = new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+    document.getElementById("updated").textContent = `Màj ${now} · 7 ligues`;
+
+    if(!allMatches.length){
+      document.getElementById("list").innerHTML=`<div class="error-box">Aucun match avec cotes disponibles.<br>Réessaie dans quelques instants.</div>`;
+      return;
+    }
+    render();
+  } catch(e){
+    setProxyStatus(false);
+    document.getElementById("list").innerHTML=`<div class="error-box">Impossible de contacter le proxy.<br>Vérifie que <code>node proxy.js</code> tourne dans ton terminal.<br><br><small>${e.message}</small></div>`;
+  }
+}
+
+async function analyzeMatch(id) {
+  const m=allMatches.find(x=>x.id===id);
+  if(!m) return;
+  const btn=document.getElementById(`btn-${id}`);
+  const box=document.getElementById(`ai-${id}`);
+  btn.classList.add("loading"); btn.textContent="Analyse…";
+  box.innerHTML=`<div class="ai-result thinking">L'IA analyse le match…</div>`;
+  const cotesInfo = m.homeOdds?`Cotes : ${m.home} @${m.homeOdds} · Nul @${m.drawOdds} · ${m.away} @${m.awayOdds}${m.ouOdds?` · Over 2.5 @${m.ouOdds.over}`:''}`:'' ;
+  const prompt=`Tu es un expert en paris sportifs. Analyse ce match et donne une recommandation concise (5-6 lignes) pour les paris sur les buts.\n\nMatch : ${m.home} vs ${m.away} (${m.leagueName})\n${cotesInfo}\nButs attendus estimés : ~${m.expGoals}\nScores : +0.5 MT=${m.ht05}%, +1.5 MT=${m.ht15}%, BTTS=${m.btts}%, +2.5 buts=${m.o25}%, +3.5 buts=${m.o35}%\n\nDonne : 1) Pari principal (mi-temps ou match entier) 2) Pari secondaire 3) Risques. Sois direct.`;
+  try {
+    const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content:prompt}]})});
+    const data=await res.json();
+    const text=data.content?.map(c=>c.text||"").join("")||"Analyse indisponible.";
+    box.innerHTML=`<div class="ai-result">${text.replace(/\n/g,"<br>")}</div>`;
+  } catch(e){ box.innerHTML=`<div class="ai-result">Erreur lors de l'analyse IA.</div>`; }
+  btn.classList.remove("loading"); btn.textContent="Analyser ↗";
+}
+
+loadAll();
+</script>
+</body>
+</html>
