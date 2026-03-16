@@ -4,7 +4,7 @@ const cors     = require("cors");
 
 const app      = express();
 const PORT     = 3001;
-const ODDS_KEY  = "747faf2c476eb3d8b30498b2e31f0c68";
+const ODDS_KEY  = "0d963cf290b4b33c9008a75e68ddde7d";
 const ODDS_BASE = "https://api.the-odds-api.com/v4";
 const FD_KEY    = "8a1de6eb00154a76b7718739c8eaafac";
 const FD_BASE   = "https://api.football-data.org/v4";
